@@ -11,7 +11,8 @@ router.post('/switch/:status', function (req, res) {
             res.send(err)
             return;
         }
-        console.log(`stdout: ${stdout}`);
+        res.status(200);
+        res.send(stdout);
     });
 
 });
