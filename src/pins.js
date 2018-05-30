@@ -1,47 +1,59 @@
 var express = require("express");
-var schedule = require('node-schedule');
 var router = express.Router();
 var gpio = require('../lib/gpio.js');
 
+router.get('/status', function (req, res) {
+    console.log("Client GET on /pin/status");
+    gpio.pinRead(4, function (data) {
+        res.status(200);
+        res.send(data);
+    });
+});
+
 router.post('/switch/:status', function (req, res) {
     var status = req.params.status;
-    gpio.pinSetup(4, 'out', function () {
-        if (status != 1 && status != 0) {
-            res.status(400);
-            res.send('ERROR');
-        } else {
-            gpio.pinWrite(4, status, function () {
-                //pinUnexport(4);
-                res.status(200);
-                res.send("OK");
-            });
-        }
-    });
+    console.log("Client POST on /pin/switch/ with value " + status);
+    if (status != 0 && status != 1) {
+        res.status(400);
+        res.send("WRONG");
+    } else {
+        gpio.pinWrite(4, status, (err) => {
+            if (err) {
+                res.status(500);
+                res.send(err);
+            }
+            res.status(200);
+            res.send("OK");
+        });
+    }
 });
 
 router.post('/brew/:seconds', function (req, res) {
     var seconds = req.params.seconds;
-    gpio.pinSetup(4, 'out', function () {
-        gpio.pinWrite(4, 1, function () {
-            //pinUnexport(4);
+    console.log("Client POST on /pin/brew/ with value " + seconds);
+    gpio.pinRead(4, (err, data) => {
+        if (err) {
+            res.status(500);
+            res.send(err);
+        } else if (data == 1) {
             res.status(200);
-            res.send("OK");
-            setTimeout(function () {
-                gpio.pinUnexport(4);
-            }, seconds * 1000);
-        });
-
-    });
-});
-
-router.post('/schedule/:hours/:minutes/:seconds', function (req, res) {
-    var hours = req.params.hours;
-    var minutes = req.params.minutes;
-    var seconds = req.params.seconds;
-    res.status(200);
-    res.send(minutes + ' ' + hours + ' * * *');
-    schedule.scheduleJob(minutes + ' ' + hours + ' * * *', function() {
-        console.log('Listo!');
+            res.send("BUSY");
+        } else {
+            gpio.pinWrite(4, 1, (err) => {
+                if (err) {
+                    res.status(500);
+                    res.send(err);
+                }
+                res.status(200);
+                res.send("OK");
+                setTimeout(() => {
+                    gpio.pinWrite(4, 0, (err) => {
+                        if (err) console.log(err);
+                        else console.log("Coffee done!");
+                    });
+                }, seconds * 1000);
+            });
+        }
     });
 });
 
