@@ -9,7 +9,7 @@ function handle(signal) {
             console.log(err);
             process.exit(1);
         }
-        console.log('Shutting down server...');
+        console.log('\nShutting down server...');
         process.exit(0);
     });
 }
@@ -19,7 +19,7 @@ process.on('SIGTERM', handle);
 
 app.get('/', function (req, res) {
     res.status(200);
-    res.send('Hello World!');
+    res.send('Welcome to the Smart Coffee Maker! Say hi!');
 });
 
 app.use('/pin/', pin);
